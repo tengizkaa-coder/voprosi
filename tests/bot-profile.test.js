@@ -16,3 +16,7 @@ test('pixel avatar is a real 512px PNG',()=>{
 test('unconfigured Telegram access is denied',()=>{
  assert.equal(validateTelegram('','unused',[]),false);
 });
+test('Mini App pixel characters have a transparent sprite',async()=>{
+ const {PNG}=await import('pngjs');const png=PNG.sync.read(readFileSync(new URL('../assets/couple-sprite.png',import.meta.url)));
+ assert.equal(png.width,512);assert.equal(png.height,512);assert.equal(png.data[3],0);assert.ok(png.data.some((v,i)=>i%4===3&&v===255));
+});

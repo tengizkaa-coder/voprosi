@@ -25,3 +25,9 @@ test('Telegram signature, account allowlist and expiry are enforced',()=>{
  assert.equal(validateTelegram(signed({date:1}),'test-token',['12']),false);
  assert.equal(validateTelegram('hash=broken','test-token',['12']),false);
 });
+test('v2 catalogue keeps 131 mature questions at the end and personal conversational copy',()=>{
+ assert.equal(questions.filter(q=>q.level>=9).length,131);
+ assert.ok(questions.slice(536).every(q=>q.level>=9));
+ assert.ok(categories.filter(c=>c.level>=9).every(c=>c.subtitle.includes('18+')));
+ assert.ok(questions.filter(q=>/\bнет\b|\bпас\b|согласи|границ|без давления|отказ/i.test(q.text)).length>10);
+});
