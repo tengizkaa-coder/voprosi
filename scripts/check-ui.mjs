@@ -40,12 +40,15 @@ await page.locator('.toast').waitFor({state:'hidden'});await page.screenshot({pa
 const sharedPage=await browser.newPage({viewport:{width:390,height:844}});
 await sharedPage.route('https://telegram.org/**',route=>route.abort());
 await sharedPage.addInitScript(()=>{localStorage.removeItem('between-progress-v2');window.Telegram={WebApp:{initData:'test-only',ready(){},expand(){}}}});
-let fixture={asked:[{id:1,at:new Date().toISOString()}],current:2,generation:0,revision:1};let resets=0;
-await sharedPage.route('**/couple-api/**',async route=>{const req=route.request();if(req.url().endsWith('/config'))return route.fulfill({json:{shared:true}});if(req.method()==='POST'){const body=req.postDataJSON();if(body.action==='reset_request')return route.fulfill({json:{...fixture,reset_token:'fixture'}});if(body.action==='reset'){assert.equal(body.confirmation,'fixture');fixture={asked:[],current:1,generation:1,revision:2};resets++}}return route.fulfill({json:fixture})});
+let fixture={asked:[{id:1,at:new Date().toISOString()}],current:2,generation:0,revision:1};let resets=0;let failReset=true;
+await sharedPage.route('**/couple-api/**',async route=>{const req=route.request();if(req.url().endsWith('/config'))return route.fulfill({json:{shared:true}});if(req.method()==='POST'){const body=req.postDataJSON();if(body.action==='reset_request')return route.fulfill({json:{...fixture,reset_token:'fixture'}});if(body.action==='reset'){if(failReset){failReset=false;return route.fulfill({status:503,json:{error:'Тестовая ошибка сервера'}})}assert.equal(body.confirmation,'fixture');fixture={asked:[],current:1,generation:1,revision:2};resets++}}return route.fulfill({json:fixture})});
 await sharedPage.goto('http://localhost:3000');
 await sharedPage.getByRole('heading',{name:questions[1].text}).waitFor();
 await sharedPage.getByRole('button',{name:'Reset',exact:true}).click();await sharedPage.getByRole('button',{name:'Нет, сохранить историю'}).click();assert.equal(resets,0);
 await sharedPage.getByRole('button',{name:'Reset',exact:true}).click();await sharedPage.getByRole('button',{name:'Да, сбросить всё'}).click();
+await sharedPage.getByRole('alert').filter({hasText:'Тестовая ошибка сервера'}).waitFor();
+assert.equal(resets,0,'failed reset must retain history and keep confirmation open');
+await sharedPage.getByRole('button',{name:'Да, сбросить всё'}).click();
 await sharedPage.getByRole('heading',{name:questions[0].text}).waitFor();assert.equal(resets,1);
 assert.equal(await sharedPage.evaluate(()=>localStorage.getItem('between-progress-v2')),null,'Shared data never written into demo storage');
 fixture={asked:[],current:537,generation:1,revision:3};

@@ -13,19 +13,29 @@ export function useProgress(){
  const shared=status==='shared';
  function accept(s,initial=false){if(!initial&&!isNewer(s,ref.current))return;const clean={asked:s.asked,current:s.current||1,generation:s.generation??0,revision:s.revision??0};ref.current=clean;setState(clean);setOnline(true)}
  const headers=()=>({'Content-Type':'application/json','X-Telegram-Init-Data':initData()});
- async function getState(){const r=await fetch(API+'/progress',{headers:headers()});const s=await r.json();if(!r.ok){if(r.status===401)setStatus('denied');throw Error(s.error||'Не удалось загрузить прогресс')}return s}
+ async function getState(){const r=await fetch(API+'/progress',{headers:headers(),signal:AbortSignal.timeout(15000)});const s=await r.json();if(!r.ok){if(r.status===401)setStatus('denied');throw Error(s.error||'Не удалось загрузить прогресс')}return s}
  useEffect(()=>{let alive=true;if(!initData())return;
  fetch(API+'/config').then(r=>{if(!r.ok)throw Error();return r.json()}).then(async c=>{if(!c.shared)throw Error();const s=await getState();if(alive){accept(s,true);setStatus('shared')}}).catch(()=>{if(alive)setStatus('denied')});return()=>{alive=false};
  },[]);
  useEffect(()=>{if(status==='demo')localStorage.setItem(STORAGE_KEY,JSON.stringify(state))},[state,status]);
  useEffect(()=>{if(!shared)return;let active=true;const sync=()=>{if(lock.current)return;getState().then(s=>{if(active)accept(s)}).catch(()=>{if(active)setOnline(false)})};const t=setInterval(sync,5000);window.addEventListener('focus',sync);return()=>{active=false;clearInterval(t);window.removeEventListener('focus',sync)}},[shared]);
  useEffect(()=>{if(!notice)return;const t=setTimeout(()=>setNotice(''),3500);return()=>clearTimeout(t)},[notice]);
- async function request(action,id,extra={}){const r=await fetch(API+'/progress',{method:'POST',headers:headers(),body:JSON.stringify({action,id,generation:ref.current.generation,...extra})});const s=await r.json();if(!r.ok){if(r.status===401)setStatus('denied');if(r.status===409){const fresh=await getState();accept(fresh)}throw Error(s.error||'Не удалось сохранить. Попробуй ещё раз.')}return s}
- async function run(task){if(lock.current)return null;lock.current=true;setBusy(true);try{return await task()}catch(e){setNotice(e.message);return null}finally{lock.current=false;setBusy(false)}}
+ async function request(action,id,extra={}){const r=await fetch(API+'/progress',{method:'POST',headers:headers(),signal:AbortSignal.timeout(15000),body:JSON.stringify({action,id,generation:ref.current.generation,...extra})});const s=await r.json();if(!r.ok){if(r.status===401)setStatus('denied');if(r.status===409){const fresh=await getState();accept(fresh)}throw Object.assign(Error(s.error||'Не удалось сохранить. Попробуй ещё раз.'),{status:r.status})}return s}
+ async function run(task){if(lock.current)return null;lock.current=true;setBusy(true);try{return await task()}catch(e){setNotice(e.name==='TimeoutError'?'Сервер не ответил вовремя. Проверь связь и попробуй ещё раз.':e.message);return null}finally{lock.current=false;setBusy(false)}}
  async function mutate(action,id,extra={}){return run(async()=>{if(!['shared','demo'].includes(status))throw Error('Сначала открой приложение из бота');let s;
   if(shared)s=await request(action,id,extra);else{if(action==='next'){const done=new Set(ref.current.asked.map(a=>a.id));const pool=questions.filter(q=>!done.has(q.id)&&(!extra.category||q.category===extra.category));const q=pool[extra.random?Math.floor(Math.random()*pool.length):0];if(!q)return null;s=localAction(ref.current,'select',q.id)}else{s=localAction(ref.current,action,id);if(action==='mark'){const next=questions.find(q=>!s.asked.some(a=>a.id===q.id)&&(!extra.category||q.category===extra.category));if(next)s=localAction(s,'select',next.id)}}}
   accept(s);return s;
  })}
- async function resetAll(){return run(async()=>{let s;if(shared){const challenge=await request('reset_request');s=await request('reset',undefined,{confirmation:challenge.reset_token,generation:challenge.generation})}else s=localAction(ref.current,'reset');accept(s);setNotice('Всё с чистого листа. Привет, вопрос № 1.');return s})}
+ async function resetAll(){return run(async()=>{let s;if(shared){
+   // Refresh before creating a challenge; another client may have reset since polling.
+   const fresh=await getState();accept(fresh);
+   let challenge;
+   for(let attempt=0;attempt<2;attempt++){
+    try{challenge=await request('reset_request');break}catch(e){if(e.status!==409||attempt===1)throw e}
+   }
+   if(typeof challenge?.reset_token!=='string'||!Number.isInteger(challenge.generation))throw Error('Сервер не выдал подтверждение сброса. Закрой приложение и открой снова.');
+   s=await request('reset',undefined,{confirmation:challenge.reset_token,generation:challenge.generation});
+   if(s.asked?.length!==0||s.current!==1||s.generation<=challenge.generation)throw Error('Сервер не подтвердил сброс. История не изменена — попробуй ещё раз.');
+  }else s=localAction(ref.current,'reset');accept(s);setNotice('Всё с чистого листа. Привет, вопрос № 1.');return s})}
  return {state,status,shared,busy,online,notice,setNotice,mutate,resetAll};
 }

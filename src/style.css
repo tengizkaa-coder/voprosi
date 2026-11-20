@@ -15,3 +15,5 @@
 body{min-height:var(--app-height,100dvh);padding-top:var(--app-safe-top,0px);padding-left:var(--app-safe-left,0px);padding-right:var(--app-safe-right,0px);overscroll-behavior-y:none}
 @media(min-width:761px){.sidebar{top:var(--app-safe-top,0px);height:calc(100dvh - var(--app-safe-top,0px));padding-bottom:max(20px,var(--app-safe-bottom,0px))}}
 @media(max-width:760px){.mobile-nav{height:calc(68px + max(env(safe-area-inset-bottom),var(--app-safe-bottom,0px)));padding-bottom:calc(7px + max(env(safe-area-inset-bottom),var(--app-safe-bottom,0px)))}.app-main{padding-bottom:calc(88px + max(env(safe-area-inset-bottom),var(--app-safe-bottom,0px)))}}
+.reset-error{color:#9d3359;background:#fff0f4;border:1px solid #efb6c9;border-radius:12px;padding:12px;font-weight:700}
+.modal-overlay{padding-top:max(20px,var(--app-safe-top,0px));padding-bottom:max(20px,var(--app-safe-bottom,0px))}
