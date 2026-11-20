@@ -25,9 +25,19 @@ test('Telegram signature, account allowlist and expiry are enforced',()=>{
  assert.equal(validateTelegram(signed({date:1}),'test-token',['12']),false);
  assert.equal(validateTelegram('hash=broken','test-token',['12']),false);
 });
-test('v2 catalogue keeps 131 mature questions at the end and personal conversational copy',()=>{
+test('catalogue keeps 131 mature questions at the end and explicit boundaries',()=>{
  assert.equal(questions.filter(q=>q.level>=9).length,131);
  assert.ok(questions.slice(536).every(q=>q.level>=9));
  assert.ok(categories.filter(c=>c.level>=9).every(c=>c.subtitle.includes('18+')));
  assert.ok(questions.filter(q=>/\bнет\b|\bпас\b|согласи|границ|без давления|отказ/i.test(q.text)).length>10);
+});
+
+test('new-acquaintance progression starts with basics and does not assume a relationship',()=>{
+ assert.equal(questions[0].text,'Какой твой любимый цвет?');
+ assert.equal(questions[1].text,'Какое твоё любимое блюдо?');
+ assert.equal(questions[2].text,'Какую музыку ты чаще всего слушаешь?');
+ assert.ok(questions.slice(0,134).every(q=>!/секс|интим|измена|ревност|травм|предатель|наши отношения/i.test(q.text)));
+ assert.ok(questions.every(q=>!/наши отношения|нашей паре|нашу ссору|наша близость|наш первый поцелуй|нашей сексуальной жизни|когда мы|первый секс со мной|тебя во мне|мой поступок/i.test(q.text)));
+ assert.ok(categories.find(c=>c.id==='values').name.includes('Принципы'));
+ assert.ok(categories.find(c=>c.id==='past').name.includes('границы'));
 });

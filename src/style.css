@@ -9,3 +9,5 @@
 @media(max-width:760px){.page-intro p{display:none}.page-intro{min-height:96px;margin-bottom:20px}.question-body{min-height:220px;padding-top:24px;padding-bottom:23px}.question-body h2{font-size:26px;line-height:1.38}.intro-pixels{height:96px}}
 @media(max-width:370px){.intro-pixels{height:84px}.question-body h2{font-size:24px}}
 .pixel-stage>.pixel-couple{mix-blend-mode:normal}.intro-pixels{background:linear-gradient(135deg,#f1e4fb,#f9e3f1)}
+/* Descriptive topic names remain readable on narrow cards. */
+.compact-card h3{white-space:normal;min-height:30px}

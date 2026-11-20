@@ -1,7 +1,7 @@
 import {useEffect,useRef,useState} from 'react';
-import {questions,CATALOG_VERSION} from '../shared/questions.js';
+import {questions,PROGRESS_STORAGE_VERSION} from '../shared/questions.js';
 import {emptyProgress,isNewer,localAction} from './progress.js';
-export const STORAGE_KEY=`between-progress-v${CATALOG_VERSION}`;
+export const STORAGE_KEY=`between-progress-v${PROGRESS_STORAGE_VERSION}`;
 const API=(import.meta.env.VITE_API_URL||'/api').replace(/\/$/,'');
 const initData=()=>window.Telegram?.WebApp?.initData||'';
 function readLocal(){try{const s=JSON.parse(localStorage.getItem(STORAGE_KEY));if(Array.isArray(s?.asked)&&Number.isInteger(s.current)&&s.current>=1&&s.current<=667)return s}catch{}return emptyProgress()}

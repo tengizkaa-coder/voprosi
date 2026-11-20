@@ -16,7 +16,7 @@ let state=JSON.parse(await page.evaluate(()=>localStorage.getItem('between-progr
 assert.equal(state.asked.length,1);assert.equal(state.asked[0].id,1);assert.equal(state.current,2);
 await page.reload();await page.getByRole('heading',{name:questions[1].text}).waitFor();
 await page.getByRole('button',{name:'Все 10 тем'}).click();
-await page.locator('.all-categories button').filter({hasText:'Разогрев'}).click();
+await page.locator('.all-categories button').filter({hasText:'Самое простое'}).click();
 await page.getByRole('button',{name:'СЛУЧАЙНЫЙ',exact:true}).click();
 state=JSON.parse(await page.evaluate(()=>localStorage.getItem('between-progress-v2')));assert.notEqual(state.current,1);assert.ok(state.current<=67);
 await page.locator('.sidebar nav button').filter({hasText:'Наша история'}).click();await page.locator('.history-list article').waitFor();
