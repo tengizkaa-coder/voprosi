@@ -1,7 +1,11 @@
 import {chromium} from '@playwright/test';
 import assert from 'node:assert/strict';
-const browser=await chromium.launch({headless:true});
+let launch={headless:true};
+if(process.env.USE_BUNDLED_CHROMIUM){const {default:binary,inflate,setupLambdaEnvironment}=await import('@sparticuz/chromium');setupLambdaEnvironment('/tmp/al2023/lib');await inflate(process.cwd()+'/node_modules/@sparticuz/chromium/bin/al2023.tar.br');launch={...launch,executablePath:await binary.executablePath(),args:binary.args}}
+const browser=await chromium.launch(launch);
 const page=await browser.newPage({viewport:{width:1440,height:1100}});
+await page.route('https://telegram.org/**',route=>route.abort());
+await page.route('**/couple-api/config',route=>route.fulfill({json:{shared:true}}));
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
 await page.goto('http://localhost:3000');await page.getByRole('heading',{name:'О чём поговорим сегодня?'}).waitFor();
 await page.screenshot({path:'/tmp/between-desktop.png',fullPage:true});
@@ -19,4 +23,23 @@ await page.locator('.history-list article button').click();await page.getByRole(
 await page.getByRole('heading',{name:'Здесь будут ваши разговоры'}).waitFor();
 await page.setViewportSize({width:390,height:844});await page.locator('.mobile-nav button').filter({hasText:'Вопросы'}).click();await page.screenshot({path:'/tmp/between-mobile.png',fullPage:true});
 assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),'No horizontal overflow');
-assert.deepEqual(errors,[]);await browser.close();console.log('UI checks passed: mark, persist, reload, random excludes asked, undo, mobile overflow; no runtime errors.');
+await page.getByRole('button',{name:'Reset',exact:true}).click();
+await page.getByRole('button',{name:'Нет, сохранить историю'}).click();
+await page.getByRole('button',{name:'Reset',exact:true}).click();
+await page.getByRole('button',{name:'Да, сбросить всё'}).click();
+await page.getByRole('heading',{name:'Как выглядит твой идеальный выходной?'}).waitFor();
+state=JSON.parse(await page.evaluate(()=>localStorage.getItem('between-progress-v1')));assert.equal(state.asked.length,0);assert.equal(state.current,1);
+await page.locator('.toast').waitFor({state:'hidden'});await page.screenshot({path:'/tmp/between-mobile.png',fullPage:true});
+// Shared mode with a Telegram WebView and mocked transport (no real user progress touched).
+const sharedPage=await browser.newPage({viewport:{width:390,height:844}});
+await sharedPage.route('https://telegram.org/**',route=>route.abort());
+await sharedPage.addInitScript(()=>{localStorage.removeItem('between-progress-v1');window.Telegram={WebApp:{initData:'test-only',ready(){},expand(){}}}});
+let fixture={asked:[{id:1,at:new Date().toISOString()}],current:2,generation:0,revision:1};let resets=0;
+await sharedPage.route('**/couple-api/**',async route=>{const req=route.request();if(req.url().endsWith('/config'))return route.fulfill({json:{shared:true}});if(req.method()==='POST'){const body=req.postDataJSON();if(body.action==='reset_request')return route.fulfill({json:{...fixture,reset_token:'fixture'}});if(body.action==='reset'){assert.equal(body.confirmation,'fixture');fixture={asked:[],current:1,generation:1,revision:2};resets++}}return route.fulfill({json:fixture})});
+await sharedPage.goto('http://localhost:3000');
+await sharedPage.getByRole('heading',{name:'Какой запах мгновенно делает тебя счастливее?'}).waitFor();
+await sharedPage.getByRole('button',{name:'Reset',exact:true}).click();await sharedPage.getByRole('button',{name:'Нет, сохранить историю'}).click();assert.equal(resets,0);
+await sharedPage.getByRole('button',{name:'Reset',exact:true}).click();await sharedPage.getByRole('button',{name:'Да, сбросить всё'}).click();
+await sharedPage.getByRole('heading',{name:'Как выглядит твой идеальный выходной?'}).waitFor();assert.equal(resets,1);
+assert.equal(await sharedPage.evaluate(()=>localStorage.getItem('between-progress-v1')),null,'Shared data never written into demo storage');
+assert.deepEqual(errors,[]);await browser.close();console.log('UI checks passed: mark, persist, reload, random excludes asked, undo, mobile overflow, confirmed local/shared reset, cancel and storage isolation; no runtime errors.');

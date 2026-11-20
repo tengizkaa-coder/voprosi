@@ -27,10 +27,17 @@ jobs:
       - run: npm run build -- --base=/voprosi/
         env:
           VITE_API_URL: https://icleianorxfnwbpylelw.supabase.co/functions/v1/couple-api
-      - uses: actions/configure-pages@v5
+      - name: Check Pages configuration
+        id: pages
+        continue-on-error: true
+        uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
+      - name: Pages needs owner setup
+        if: steps.pages.outcome != 'success'
+        run: echo "Mini App built and tested. Enable Settings > Pages > GitHub Actions, then re-run this workflow. No permanent site was deployed." >> "$GITHUB_STEP_SUMMARY"
       - name: Deploy
+        if: steps.pages.outcome == 'success'
         id: deployment
         uses: actions/deploy-pages@v4
