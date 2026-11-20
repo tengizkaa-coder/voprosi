@@ -7,8 +7,9 @@
 - Бот: https://t.me/VOPROS667AGENT
 - Supabase: проект `mezhdu-nami`, ref `icleianorxfnwbpylelw`, регион Франкфурт.
 - Постоянный backend: Edge Function `couple-api`, Telegram webhook и Postgres.
-- Mini App пока использует **временный Arena preview URL** из секрета `APP_URL`. Когда sandbox останавливается, эта ссылка перестаёт работать. Бот и серверный прогресс от sandbox не зависят.
-- Для постоянного frontend-хостинга подготовлен GitHub Pages workflow. Интеграция получила HTTP 403 на включение Pages: владелец должен включить его в Settings → Pages → Source: GitHub Actions, затем повторно запустить workflow Publish Mini App для текущей ветки. Не требуется переключать ветку или сливать её в main. После публикации нужно заменить `APP_URL` и повторить административную настройку кнопки Telegram.
+- Постоянный Mini App: https://tengizkaa-coder.github.io/voprosi/ — GitHub Pages, Source: GitHub Actions. `APP_URL` в Supabase и кнопка меню Telegram обновлены на этот адрес. От Arena preview приложение больше не зависит.
+- Публикация выполняется workflow `Publish Mini App` из текущей ветки. Подтверждён успешный Deploy; HTML, JS и CSS возвращают HTTP 200, сборка содержит общий API и Reset, CORS разрешает origin GitHub Pages. Временный административный секрет после настройки удалён.
+- Старые inline-кнопки в ранее отправленных сообщениях могут содержать preview URL. Отправьте боту `/start` или используйте кнопку меню «Между нами», чтобы открыть постоянную ссылку. Новые сообщения используют новый адрес.
 
 ## Возможности
 
