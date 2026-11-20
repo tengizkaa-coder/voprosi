@@ -14,7 +14,7 @@ export function useProgress(){
  function accept(s,initial=false){if(!initial&&!isNewer(s,ref.current))return;const clean={asked:s.asked,current:s.current||1,generation:s.generation??0,revision:s.revision??0};ref.current=clean;setState(clean);setOnline(true)}
  const headers=()=>({'Content-Type':'application/json','X-Telegram-Init-Data':initData()});
  async function getState(){const r=await fetch(API+'/progress',{headers:headers()});const s=await r.json();if(!r.ok){if(r.status===401)setStatus('denied');throw Error(s.error||'Не удалось загрузить прогресс')}return s}
- useEffect(()=>{let alive=true;window.Telegram?.WebApp?.ready();window.Telegram?.WebApp?.expand();if(!initData())return;
+ useEffect(()=>{let alive=true;if(!initData())return;
  fetch(API+'/config').then(r=>{if(!r.ok)throw Error();return r.json()}).then(async c=>{if(!c.shared)throw Error();const s=await getState();if(alive){accept(s,true);setStatus('shared')}}).catch(()=>{if(alive)setStatus('denied')});return()=>{alive=false};
  },[]);
  useEffect(()=>{if(status==='demo')localStorage.setItem(STORAGE_KEY,JSON.stringify(state))},[state,status]);

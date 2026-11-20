@@ -11,3 +11,7 @@
 .pixel-stage>.pixel-couple{mix-blend-mode:normal}.intro-pixels{background:linear-gradient(135deg,#f1e4fb,#f9e3f1)}
 /* Descriptive topic names remain readable on narrow cards. */
 .compact-card h3{white-space:normal;min-height:30px}
+/* Fullscreen Telegram overlays its controls; keep UI inside both safe areas. */
+body{min-height:var(--app-height,100dvh);padding-top:var(--app-safe-top,0px);padding-left:var(--app-safe-left,0px);padding-right:var(--app-safe-right,0px);overscroll-behavior-y:none}
+@media(min-width:761px){.sidebar{top:var(--app-safe-top,0px);height:calc(100dvh - var(--app-safe-top,0px));padding-bottom:max(20px,var(--app-safe-bottom,0px))}}
+@media(max-width:760px){.mobile-nav{height:calc(68px + max(env(safe-area-inset-bottom),var(--app-safe-bottom,0px)));padding-bottom:calc(7px + max(env(safe-area-inset-bottom),var(--app-safe-bottom,0px)))}.app-main{padding-bottom:calc(88px + max(env(safe-area-inset-bottom),var(--app-safe-bottom,0px)))}}

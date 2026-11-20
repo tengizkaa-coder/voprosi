@@ -1,0 +1,7 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {setupTelegram} from '../src/telegram.js';
+function fixture(version){const calls=[],events=new Map(),styles=new Map();return {calls,events,styles,root:{style:{setProperty:(k,v)=>styles.set(k,v),removeProperty:k=>styles.delete(k)}},app:{isVersionAtLeast:v=>version>=Number(v),ready:()=>calls.push('ready'),expand:()=>calls.push('expand'),requestFullscreen:()=>calls.push('fullscreen'),disableVerticalSwipes:()=>calls.push('swipes'),viewportStableHeight:844,safeAreaInset:{top:24,bottom:20},contentSafeAreaInset:{top:48},onEvent:(e,fn)=>events.set(e,fn),offEvent:e=>events.delete(e)}}}
+test('Telegram requests fullscreen, disables collapse swipes and updates safe areas',()=>{const f=fixture(8);const cleanup=setupTelegram(f.app,f.root);assert.deepEqual(f.calls,['ready','expand','swipes','fullscreen']);assert.equal(f.styles.get('--app-safe-top'),'72px');f.app.contentSafeAreaInset.top=32;f.events.get('contentSafeAreaChanged')();assert.equal(f.styles.get('--app-safe-top'),'56px');cleanup();assert.equal(f.events.size,0);assert.equal(f.styles.size,0)});
+test('old Telegram stays expanded without unsupported API calls',()=>{const f=fixture(7);setupTelegram(f.app,f.root);assert.deepEqual(f.calls,['ready','expand'])});
+test('fullscreen rejection does not break initialization',()=>{const f=fixture(8);f.app.requestFullscreen=()=>{throw Error('unsupported')};assert.doesNotThrow(()=>setupTelegram(f.app,f.root));assert.equal(f.events.size,4)});

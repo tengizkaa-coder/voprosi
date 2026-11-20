@@ -17,7 +17,12 @@ assert.equal(state.asked.length,1);assert.equal(state.asked[0].id,1);assert.equa
 await page.reload();await page.getByRole('heading',{name:questions[1].text}).waitFor();
 await page.getByRole('button',{name:'Все 10 тем'}).click();
 await page.locator('.all-categories button').filter({hasText:'Самое простое'}).click();
-await page.getByRole('button',{name:'СЛУЧАЙНЫЙ',exact:true}).click();
+const randomButton=page.getByRole('button',{name:'СЛУЧАЙНЫЙ',exact:true});
+await randomButton.scrollIntoViewIfNeeded();
+await page.evaluate(()=>{window.__scrollCalls=[];const original=window.scrollTo.bind(window);window.scrollTo=(...args)=>{window.__scrollCalls.push(args);return original(...args)}});
+await randomButton.click();
+await page.waitForTimeout(150);
+assert.deepEqual(await page.evaluate(()=>window.__scrollCalls),[], 'question selection must not navigate/scroll to top');
 state=JSON.parse(await page.evaluate(()=>localStorage.getItem('between-progress-v2')));assert.notEqual(state.current,1);assert.ok(state.current<=67);
 await page.locator('.sidebar nav button').filter({hasText:'Наша история'}).click();await page.locator('.history-list article').waitFor();
 await page.locator('.history-list article button').click();await page.getByRole('button',{name:'Да, вернуть вопрос'}).click();
